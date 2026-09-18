@@ -1,0 +1,36 @@
+name: Atualizar Feed RSS
+
+on:
+  schedule:
+    # Executa todos os dias às 08:30 (horário de Brasília = 11:30 UTC)
+    - cron: '30 11 * * *'
+  workflow_dispatch: # Permite rodar o teste manual pelo botão no GitHub
+
+jobs:
+  executar-script:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar código do repositório
+        uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar biblioteca do Gemini
+        run: |
+          pip install google-genai
+
+      - name: Executar script gerador do feed
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python scripts/gerar_feed.py
+
+      - name: Fazer commit do feed atualizado
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add feed.xml
+          git diff --staged --quiet || (git commit -m "chore: atualiza feed.xml [skip ci]" && git push)
