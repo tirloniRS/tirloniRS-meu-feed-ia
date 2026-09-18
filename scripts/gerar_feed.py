@@ -2,10 +2,10 @@ import os
 from google import genai
 from google.genai import types
 
-# Inicializa o cliente com a chave dos Secrets do GitHub
+# 1. Verifica a chave de API
 api_key = os.environ.get("GEMINI_API_KEY")
 if not api_key:
-    raise ValueError("A variável GEMINI_API_KEY não foi encontrada.")
+    raise ValueError("A variável GEMINI_API_KEY não foi encontrada nos Secrets.")
 
 client = genai.Client(api_key=api_key)
 
@@ -17,30 +17,34 @@ Pesquise na web as 3 a 5 principais notícias investigativas e de alto impacto d
 3. Governança e regulação de tecnologia
 
 Gere um documento XML de feed RSS 2.0 válido e completo contendo:
-- <channel> com título "Feed IA e Educação", link "https://tirlonirs.github.io/meu-feed-ia/feed.xml" e descrição.
+- <channel> com:
+  * <title>: Feed IA e Educação
+  * <link>: https://tirlonirs.github.io/meu-feed-ia/feed.xml
+  * <description>: Resumo diário de notícias investigativas sobre IA, Educação e Tecnologia.
+  * <language>: pt-BR
 - Cada notícia como um <item> com:
   * <title>: título claro e objetivo.
-  * <link>: URL original da fonte da notícia.
-  * <guid>: a mesma URL original da fonte.
+  * <link>: URL original da matéria.
+  * <guid>: a mesma URL original da matéria.
   * <pubDate>: data no padrão RFC 822 (ex: Fri, 18 Sep 2026 12:00:00 GMT).
-  * <description>: resumo direto com o fato, o impacto a longo prazo e a citação da fonte dentro de uma tag <![CDATA[ ... ]]>.
+  * <description>: resumo direto contendo o fato, o impacto a longo prazo e a citação da fonte envolto em <![CDATA[ ... ]]>.
 
 Retorne APENAS o código XML puro, começando em <?xml version="1.0" encoding="UTF-8"?>.
-Não inclua blocos markdown (como ```xml ou ```).
+Não inclua delimitadores markdown (como ```xml ou ```).
 """
 
-# Executa com pesquisa do Google habilitada para buscar fatos reais das últimas 24h
-response = client.models.generate_content(
-    model="gemini-2.5-flash",
-    contents=prompt,
+# 2. Utiliza o modelo gemini-3.6-flash com a ferramenta de busca do Google
+chat = client.chats.create(
+    model="gemini-3.6-flash",
     config=types.GenerateContentConfig(
         tools=[types.Tool(google_search=types.GoogleSearch())]
     )
 )
 
+response = chat.send_message(prompt)
 conteudo_xml = response.text.strip()
 
-# Limpeza de eventuais delimitadores de código
+# 3. Limpeza preventiva de blocos markdown
 if conteudo_xml.startswith("```xml"):
     conteudo_xml = conteudo_xml[6:]
 if conteudo_xml.startswith("```"):
@@ -50,7 +54,7 @@ if conteudo_xml.endswith("```"):
 
 conteudo_xml = conteudo_xml.strip()
 
-# Salva na raiz do repositório como feed.xml
+# 4. Salva o feed na raiz do repositório
 with open("feed.xml", "w", encoding="utf-8") as f:
     f.write(conteudo_xml)
 
