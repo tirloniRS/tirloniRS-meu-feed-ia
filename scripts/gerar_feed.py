@@ -33,9 +33,9 @@ Retorne APENAS o código XML puro, começando em <?xml version="1.0" encoding="U
 Não inclua delimitadores markdown (como ```xml ou ```).
 """
 
-# 2. Utiliza o modelo gemini-3.6-flash com a ferramenta de busca do Google
+# 2. Utiliza o modelo gemini-3.4-flash com a ferramenta de busca do Google
 chat = client.chats.create(
-    model="gemini-3.6-flash",
+    model="gemini-3.4-flash",
     config=types.GenerateContentConfig(
         tools=[types.Tool(google_search=types.GoogleSearch())]
     )
